@@ -1,0 +1,80 @@
+name: service-load-test
+description: Benchmark the webhook service under increasing load
+
+target:
+  base_url: https://app.example.com
+  path: /path/to/resource
+  request:
+    method: POST
+    headers:
+      Content-Type: application/x-www-form-urlencoded
+    body:
+      foo: "bar"
+      param2: "param 2 value"
+
+k6:
+  executor: ramping-arrival-rate
+  executor_settings:
+    start_rps: 10
+    time_unit: 1s
+    pre_allocated_vus: 10
+    max_vus: 50
+    stages:
+      - rps: 10
+        duration: 30s
+      - rps: 25
+        duration: 30s
+      - rps: 50
+        duration: 30s
+      - rps: 100
+        duration: 60s
+
+prometheus:
+  collection_delay: 10s
+  url: https://prometheus.example.com
+  auth:
+    type: basic
+    username:
+      from_env: PROMETHEUS_USERNAME
+    password:
+      from_env: PROMETHEUS_PASSWORD
+
+monitoring:
+  - name: service-1
+    namespace: namespace-1
+    pod_name_pattern: service-1-.*
+    metrics:
+      cpu:
+        - average
+        - peak
+      memory:
+        - average
+        - peak
+      network:
+        - receive
+        - transmit
+
+  - name: postgres
+    namespace: namespace-2
+    pod_name_pattern: pg-.*
+    metrics:
+      cpu:
+        - average
+        - peak
+      memory:
+        - average
+        - peak
+
+  - name: ingress
+    namespace: ingress-nginx
+    pod_name_pattern: ingress-nginx-controller-.*
+    metrics:
+      cpu:
+        - average
+        - peak
+      memory:
+        - average
+        - peak
+      network:
+        - receive
+        - transmit
