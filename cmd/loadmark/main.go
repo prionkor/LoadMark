@@ -3,72 +3,94 @@ package main
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
 	"time"
 
 	"github.com/joho/godotenv"
-	"github.com/prionkor/benchmark-runner/internal/config"
-	"github.com/prionkor/benchmark-runner/internal/k6"
-	"github.com/prionkor/benchmark-runner/internal/metrics"
-	"github.com/prionkor/benchmark-runner/internal/model"
-	"github.com/prionkor/benchmark-runner/internal/prometheus"
+	"github.com/prionkor/loadmark/internal/config"
+	"github.com/prionkor/loadmark/internal/k6"
+	"github.com/prionkor/loadmark/internal/metrics"
+	"github.com/prionkor/loadmark/internal/model"
+	"github.com/prionkor/loadmark/internal/prometheus"
 )
 
 func main() {
 	if err := godotenv.Load(); err != nil && !os.IsNotExist(err) {
 		log.Fatalf("Failed to load .env: %v", err)
 	}
-	config, err := config.Load("config.yml")
+
+	configPath := "config.yaml"
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		configPath = "config.yml"
+	}
+
+	config, err := config.Load(configPath)
 
 	if err != nil {
 		log.Fatalf("Failed to load config: %v", err)
 	}
 
-	collectionDelay, err := time.ParseDuration(
-		config.Prometheus.CollectionDelay,
-	)
+	// collectionDelay, err := time.ParseDuration(
+	// 	config.Prometheus.CollectionDelay,
+	// )
+	// if err != nil {
+	// 	log.Fatalf("Invalid Prometheus collection delay: %v", err)
+	// }
+
+	metricsServer := metrics.NewServer()
+
+	metricsURL, err := metricsServer.Start()
 	if err != nil {
-		log.Fatalf("Invalid Prometheus collection delay: %v", err)
+		log.Fatalf("Failed to start metrics server: %v", err)
 	}
 
+	defer metricsServer.Stop()
+
+	fmt.Println("Metrics server:", metricsURL)
+
 	// start k6
-	clientResult, err := k6.Run(config)
+	_, err = k6.Run(config, metricsURL)
 	if err != nil {
 		log.Fatalf("Failed to run benchmark: %v", err)
 	}
 
-	fmt.Printf(
-		"Waiting %s for Prometheus to collect metrics...\n",
-		collectionDelay,
-	)
+	metricsResult := metricsServer.Result()
 
-	time.Sleep(collectionDelay)
+	clientResult := metricsResult.ClientResult()
 
-	promClient := &prometheus.Client{
-		BaseURL:  config.Prometheus.URL,
-		Username: config.Prometheus.Username,
-		Password: config.Prometheus.Password,
-		HTTP:     &http.Client{},
-	}
+	fmt.Printf("Client result: %+v\n", clientResult)
 
-	benchmarkResult := model.BenchmarkResult{}
+	// fmt.Printf(
+	// 	"Waiting %s for Prometheus to collect metrics...\n",
+	// 	collectionDelay,
+	// )
 
-	for _, stage := range clientResult.Stages {
-		stage := collectStageMetrics(
-			stage,
-			config.Monitoring,
-			promClient,
-			5*time.Second,
-		)
+	// time.Sleep(collectionDelay)
 
-		benchmarkResult.Stages = append(
-			benchmarkResult.Stages,
-			stage,
-		)
-	}
+	// promClient := &prometheus.Client{
+	// 	BaseURL:  config.Prometheus.URL,
+	// 	Username: config.Prometheus.Username,
+	// 	Password: config.Prometheus.Password,
+	// 	HTTP:     &http.Client{},
+	// }
 
-	printBenchmarkResult(benchmarkResult)
+	// benchmarkResult := model.BenchmarkResult{}
+
+	// for _, stage := range clientResult.Stages {
+	// 	stage := collectStageMetrics(
+	// 		stage,
+	// 		config.Monitoring,
+	// 		promClient,
+	// 		5*time.Second,
+	// 	)
+
+	// 	benchmarkResult.Stages = append(
+	// 		benchmarkResult.Stages,
+	// 		stage,
+	// 	)
+	// }
+
+	// printBenchmarkResult(benchmarkResult)
 
 }
 
