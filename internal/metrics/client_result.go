@@ -1,11 +1,16 @@
 package metrics
 
+type DataStats struct {
+	Total float64
+	Rate  float64
+}
+
 type ClientResult struct {
 	Requests     int
 	Failed       int
 	Duration     DurationStats
-	DataSent     float64
-	DataReceived float64
+	DataSent     DataStats
+	DataReceived DataStats
 }
 
 func (r *result) ClientResult() ClientResult {
@@ -26,14 +31,20 @@ func (r *result) ClientResult() ClientResult {
 			durations = append(durations, sample.Value)
 
 		case "data_sent":
-			result.DataSent += sample.Value
+			result.DataSent.Total += sample.Value
 
 		case "data_received":
-			result.DataReceived += sample.Value
+			result.DataReceived.Total += sample.Value
 		}
 	}
 
 	result.Duration = calculateDurationStats(durations)
+
+	elapsed := r.Duration().Seconds()
+	if elapsed > 0 {
+		result.DataSent.Rate = result.DataSent.Total / elapsed
+		result.DataReceived.Rate = result.DataReceived.Total / elapsed
+	}
 
 	return result
 }
