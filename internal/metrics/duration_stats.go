@@ -3,12 +3,13 @@ package metrics
 import "sort"
 
 type DurationStats struct {
-	Min float64
-	Max float64
-	Avg float64
-	P90 float64
-	P95 float64
-	P99 float64
+	Min    float64
+	Max    float64
+	Avg    float64
+	Median float64
+	P90    float64
+	P95    float64
+	P99    float64
 }
 
 func calculateDurationStats(values []float64) DurationStats {
@@ -26,12 +27,13 @@ func calculateDurationStats(values []float64) DurationStats {
 	}
 
 	return DurationStats{
-		Min: sorted[0],
-		Max: sorted[len(sorted)-1],
-		Avg: sum / float64(len(sorted)),
-		P90: percentile(sorted, 0.90),
-		P95: percentile(sorted, 0.95),
-		P99: percentile(sorted, 0.99),
+		Min:    sorted[0],
+		Max:    sorted[len(sorted)-1],
+		Avg:    sum / float64(len(sorted)),
+		Median: percentile(sorted, 0.50),
+		P90:    percentile(sorted, 0.90),
+		P95:    percentile(sorted, 0.95),
+		P99:    percentile(sorted, 0.99),
 	}
 }
 
