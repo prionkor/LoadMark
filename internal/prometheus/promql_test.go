@@ -4,7 +4,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/prionkor/benchmark-runner/internal/model"
+	"github.com/prionkor/loadmark/internal/model"
 )
 
 func TestBuildCPUQuery(t *testing.T) {

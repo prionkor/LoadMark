@@ -3,7 +3,7 @@ package k6
 import (
 	"time"
 
-	"github.com/prionkor/benchmark-runner/internal/model"
+	"github.com/prionkor/loadmark/internal/model"
 )
 
 type ClientResult struct {

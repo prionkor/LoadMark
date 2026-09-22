@@ -5,12 +5,12 @@ import (
 	"os"
 	"time"
 
-	"github.com/prionkor/benchmark-runner/internal/model"
+	"github.com/prionkor/loadmark/internal/model"
 	"gopkg.in/yaml.v3"
 )
 
 func Load(path string) (model.Config, error) {
-	data, err := os.ReadFile("config.yml")
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return model.Config{}, err
 	}

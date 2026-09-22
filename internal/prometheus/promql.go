@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/prionkor/benchmark-runner/internal/model"
+	"github.com/prionkor/loadmark/internal/model"
 )
 
 func (c *Client) CollectCPU(

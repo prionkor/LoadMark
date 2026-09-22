@@ -3,7 +3,7 @@ package model
 import (
 	"time"
 
-	"github.com/prionkor/benchmark-runner/internal/metrics"
+	"github.com/prionkor/loadmark/internal/metrics"
 )
 
 type Config struct {
